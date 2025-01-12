@@ -226,3 +226,13 @@ class Calculator:
 ```
 
 Essa abordagem torna o sistema mais modular, permitindo que alterações em uma funcionalidade (como a lógica de cálculo ou o formato das mensagens) sejam feitas sem impactar outras partes do código. Além disso, facilita a expansão do sistema, como a adição de novos operadores ou mudanças no protocolo de comunicação.
+
+## Open-Closed Principle 
+
+> "Objetos ou entidades devem estar abertos para extensão, mas fechados para modificação".
+
+Isto é o que o princípio Aberto-Fechado prega. Em outras palavras, quando novos comportamentos e recursos precisam ser adicionados no software, devemos estender e não alterar o código fonte original.
+
+Se um código existente precisa ser modificado sempre que novas funcionalidades são adicionadas, há um risco maior de introduzir bugs acidentais. Alterar uma funcionalidade já implementada pode afetar outras partes do sistema, especialmente em projetos grandes.
+
+Uma abordagem ideal para contornar esses riscos é adotar práticas e padrões de design que promovam a extensibilidade do sistema sem modificar o código existente.
