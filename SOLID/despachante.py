@@ -1,14 +1,15 @@
 from esqueleto import *
 
-esqueleto = Esqueleto()
+# Dicionário para armazenar as operações possíveis
+operations = {
+    'ADD': AddEsqueleto(),
+    'SUB': SubEsqueleto(),
+}
 
 class Despachante:
     def invoke(self, request):
         request = request.decode('utf-8')
         params = request.split(' ')
+        operation = params[0]
 
-        if params[0] == 'ADD':
-            return esqueleto.sum(params[1], params[2])
-        
-        elif params[0] == 'SUB':
-            return esqueleto.sub(params[1], params[2])
+        return operations[operation].handleOperation(params[1], params[2])
