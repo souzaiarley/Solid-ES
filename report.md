@@ -398,4 +398,4 @@ Para adicionar, devemos:
 
 - Adicionar mais uma implementação da classe `Operation`
 - Adicionar mais uma implementação da classe `Esqueleto`
-_ Registrar a nova operação no dicionário de operações.
+- Registrar a nova operação no dicionário de operações.
