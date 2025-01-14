@@ -478,3 +478,140 @@ class PrintingCalculator(Calculator):
 ```
 
 Com essas modificações, garantimos que a classe `scientificCalculator` não seja forçada a implementar métodos que não utiliza, respeitando o Princípio de Segregação de Interfaces (ISP). Além disso, a classe `Calculator` pode ser substuída por suas subclasses, respeitando o Princípio de Substituição de Liskov (LSP). Dessa forma, contribuímos mais ainda para a modularidade, flexibilidade e manutenibilidade do código.
+
+## Dependency Inversion (DI)
+
+Esse princípio busca garantir que uma classe não deve conter nela mesma a ferramenta que utiliza para executar uma ação, ela deve estar ligada à uma interface que permite a ferramenta se conectar com a classe. Também define que a classe e a interface não devem saber como a ferramenta funciona, porém a ferramenta precisa se encaixar com as especificações da interface.
+
+No código original segue a classe TcpServer:
+```python
+class TcpServer:
+    def __init__(self):
+        self.serverPort = 12000
+        self.serverSocket = socket(AF_INET, SOCK_STREAM)
+        self.serverSocket.bind(('', self.serverPort))
+        self.serverSocket.listen(100)
+        print(f'Server running on port {self.serverPort}')
+    
+    def acceptConnection(self):
+        connectionSocket, clientAddr = self.serverSocket.accept()
+        return connectionSocket
+
+    def getRequest(self, connectionSocket):
+        request = connectionSocket.recv(1024)
+        expression = request.decode('utf-8')
+        return expression
+    
+    def sendResponse(self, connectionSocket, result):
+        connectionSocket.send(str(result).encode('utf-8'))
+        connectionSocket.close()
+
+    def handleClient(self, connectionSocket):
+        expression = self.getRequest(connectionSocket)
+
+        args = expression.split()
+        result = 0
+
+        if args[0] == 'ADD':
+            result = float(args[1]) + float(args[2])
+        elif args[0] == 'SUB':
+            result = float(args[1]) - float(args[2])
+
+        self.sendResponse(connectionSocket, result)
+
+    def close(self):
+        self.serverSocket.close()
+
+```
+
+Perceba que a classe TcpServer está executando o serviço da calculadora dentro dela mesma, violando o princípio de Dependency Inversion. Devemos então extrair a operação/ferramenta, no caso Calculadora, de dentro dessa classe e criar uma Interface que as conectem.
+
+Felizmente, com as alterações prévias feitas no príncipio Single Responsibility Principle (SRP), nós também conseguimos resolver a violação do Dependency Inversion. Refatorando o serviço da seguinte maneira:
+
+- `TcpServer`: Recebe requisições e envia as respostas
+- `Despachante`: Recebe a requisição, decodifica e invoca o método correspondente da classe Esqueleto, passando os parâmetros necessários. Recebe o retorno do esqueleto e o retorna para o Servidor TCP para ser
+enviado ao cliente.
+- `Esqueleto`: Recebe os parâmetros , faz as conversões necessárias e chama o método apropriado da classe Calculator. Recebe a resposta da calculadora, codifica e retorna para o despachante.
+- `Calculator`: Realmente implementa as funções de calculadora.
+
+Código refatorado:
+
+#### Servidor
+
+``` python
+class TcpServer:
+    def __init__(self):
+        self.serverPort = 12000
+        self.serverSocket = socket(AF_INET, SOCK_STREAM)
+        self.serverSocket.bind(('', self.serverPort))
+        self.serverSocket.listen(100)
+        print(f'Server running on port {self.serverPort}')
+    
+    def acceptConnection(self):
+        connectionSocket, clientAddr = self.serverSocket.accept()
+        return connectionSocket
+
+    def getRequest(self, connectionSocket):
+        request = connectionSocket.recv(1024)
+        return request
+    
+    def sendResponse(self, connectionSocket, response):
+        connectionSocket.send(response)
+        connectionSocket.close()
+
+    def handleClient(self, connectionSocket):
+        request = self.getRequest(connectionSocket)
+
+        response = despachante.invoke(request)
+        self.sendResponse(connectionSocket, response)
+
+    def close(self):
+        self.serverSocket.close()
+```
+
+#### Despachante
+
+``` python
+class Despachante:
+    def invoke(self, request):
+        request = request.decode('utf-8')
+        params = request.split(' ')
+
+        if params[0] == 'ADD':
+            return esqueleto.sum(params[1], params[2])
+        
+        elif params[0] == 'SUB':
+            return esqueleto.sub(params[1], params[2])
+```
+
+#### Esqueleto
+
+``` python
+class Esqueleto:
+    def sum(self, a, b):
+        a = float(a)
+        b = float(b)
+        result = calc.add(a, b)
+        response = str(result).encode('utf-8')
+        return response
+    
+    def sub(self, a, b):
+        a = float(a)
+        b = float(b)
+        result = calc.subtract(a, b)
+        response = str(result).encode('utf-8')
+        return response
+```
+
+#### Calculadora
+
+``` python
+class Calculator:
+    def add(self, a, b):
+        return a + b
+
+    def subtract(self, a, b):
+        return a - b
+```
+
+Essa abordagem garante tanto que a classe servidor não esteja mais fundida com a ferramenta, como também cria uma interface que as conecta (Despachante), e por fim mantém a transparência, tanto a TcpServer quando Despachante não sabem como exatamente a Calculadora funciona, mas a Calculadora consegue executar a ação com os parâmetros fornecidos.
