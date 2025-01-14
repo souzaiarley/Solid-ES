@@ -4,6 +4,8 @@ from esqueleto import *
 operations = {
     'ADD': AddEsqueleto(),
     'SUB': SubEsqueleto(),
+    'PADD': AddEsqueletoPrint(),
+    'PSUB': SubEsqueletoPrint()
 }
 
 class Despachante:

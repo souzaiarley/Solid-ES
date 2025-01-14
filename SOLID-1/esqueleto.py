@@ -1,7 +1,5 @@
 from calculator import *
 
-calc = Calculator()
-
 # Abstração para esqueletos
 class Esqueleto(ABC):
     @abstractmethod
@@ -25,11 +23,29 @@ class Esqueleto(ABC):
 # Esqueleto para adição
 class AddEsqueleto(Esqueleto):
     def callCalculator(self, a, b):
+        calc = Calculator()
         result = calc.calculate(AddOperation(), a, b)
         return result
 
 # Esqueleto para subtração
 class SubEsqueleto(Esqueleto):
     def callCalculator(self, a, b):
+        calc = Calculator()
         result = calc.calculate(SubOperation(), a, b)
         return result
+
+# Esqueleto para adição (com print)
+class AddEsqueletoPrint(Esqueleto):
+    def callCalculator(self, a, b):
+        calc = PrintingCalculator()
+        result = calc.calculate(AddOperation(), a, b)
+        output = calc.printResult(result, AddOperation.__name__, a, b)
+        return output
+    
+# Esqueleto para subtração (com print)
+class SubEsqueletoPrint(Esqueleto):
+    def callCalculator(self, a, b):
+        calc = PrintingCalculator()
+        result = calc.calculate(SubOperation(), a, b)
+        output = calc.printResult(result, SubOperation.__name__, a, b)
+        return output
