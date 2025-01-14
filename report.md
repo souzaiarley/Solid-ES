@@ -399,3 +399,75 @@ Para adicionar, devemos:
 - Adicionar mais uma implementação da classe `Operation`
 - Adicionar mais uma implementação da classe `Esqueleto`
 - Registrar a nova operação no dicionário de operações.
+
+## Liskov Substitution Principle (LSP) e Interface Segregation Principle (ISP)
+
+O Princípio de Substituição de Liskov (LSP) e o Princípio de Segregação de Interfaces (ISP) são dois dos cinco princípios SOLID que visam garantir que as classes sejam fáceis de usar e de estender.
+
+O LSP estabelece que objetos de uma superclasse devem ser substituíveis por objetos de suas subclasses sem que a funcionalidade do programa seja alterada. Em outras palavras, uma classe derivada deve ser capaz de substituir sua classe base sem quebrar o comportamento do programa.
+
+O ISP, por sua vez, prega que uma classe não deve ser forçada a implementar interfaces que ela não utiliza. Em vez disso, as interfaces devem ser segregadas em interfaces menores e mais específicas, de modo que as classes possam implementar apenas o que precisam.
+
+### Exemplo de aplicação do LSP e ISP
+
+Desejamos adicionar uma nova funcionalidade ao nosso serviço de calculadora: a impressão de operações e seus resultados, tentando simular uma calculadora de impressão.
+
+Para isso criaremos um método `printResult`, que imprime na tela a operação realizada e o resultado obtido.
+Para representar essa impressão, o método deve retornar uma `string`.
+
+Aplicando essas alterações, obtemos o seguinte resultado:
+```python
+class Calculator:
+    def calculate(self, operation: Operation, a, b):
+        operationType = operation.__class__.__name__
+        result = operation.execute(a, b)
+        return self.printResult(result, operationType, a, b)
+
+    def printResult(self, result, operationType, a, b):
+        return f"{operationType}({a}, {b}) = {result}"
+```
+
+Desejamos também especificar tipos de calculadora (como calculadora simples, calculadora científica, calculadora financeira, etc.).
+
+Para isso, criaremos a classe `SimpleCalculator`.
+
+```python
+class SimpleCalculator(Calculator):
+    def printResult(self, result, operationType, a, b):
+        raise Exception("SimpleCalculator does not support printResult")
+```
+
+A `SimpleCalculator` é um tipo de calculadora criada para representar uma calculadora básica que implementa somente as operações básicas. Logo, ela não oferece suporte à impressão.
+Para representar esse comportamento, o método `printResult` da classe `SimpleCalculator` foi sobrecarregado para lançar uma exceção, indicando que a operação não é suportada.
+
+No entanto, essa abordagem viola o princípio de substituição de Liskov, pois a classe `SimpleCalculator` não é substituível pela classe `Calculator`: para as chamadas do método `printResult`, espera-se que o retorno seja a string da impressão, e não uma exceção.
+Ademais, o princípio de segregação de interfaces também é violado, pois a classe `SimpleCalculator` é forçada a implementar um método que não é utilizado.
+
+Para contornar essas violações, devemos refatorar o código de forma que a classe `SimpleCalculator` não seja forçada a implementar o método `printResult` e que a classe `Calculator` possa ser substituída por suas subclasses sem quebrar o comportamento do programa.
+
+Para isso, criaremos a classe `PrintingCalculator`, que é uma subclasse de `Calculator` que implementa o método `printResult`:
+
+#### Calculadora de Impressão
+
+```python
+class PrintingCalculator(Calculator):
+    def printResult(self, result, operationType, a, b):
+        return f"{operationType}({a}, {b}) = {result}"
+```
+
+#### Calculadora Genérica
+
+```python
+class Calculator:
+    def calculate(self, operation: Operation, a, b):
+        result = operation.execute(a, b)
+        return result
+```
+
+#### Calculadora Simples
+Simplesmente herda da classe `Calculator`.
+
+```python
+class SimpleCalculator(Calculator):
+    pass
+```
