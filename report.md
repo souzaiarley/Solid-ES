@@ -526,15 +526,7 @@ class TcpServer:
 
 Perceba que a classe TcpServer está executando o serviço da calculadora dentro dela mesma, violando o princípio de Dependency Inversion. Devemos então extrair a operação/ferramenta, no caso Calculadora, de dentro dessa classe e criar uma Interface que as conectem.
 
-Felizmente, com as alterações prévias feitas no príncipio Single Responsibility Principle (SRP), nós também conseguimos resolver a violação do Dependency Inversion. Refatorando o serviço da seguinte maneira:
-
-- `TcpServer`: Recebe requisições e envia as respostas
-- `Despachante`: Recebe a requisição, decodifica e invoca o método correspondente da classe Esqueleto, passando os parâmetros necessários. Recebe o retorno do esqueleto e o retorna para o Servidor TCP para ser
-enviado ao cliente.
-- `Esqueleto`: Recebe os parâmetros , faz as conversões necessárias e chama o método apropriado da classe Calculator. Recebe a resposta da calculadora, codifica e retorna para o despachante.
-- `Calculator`: Realmente implementa as funções de calculadora.
-
-Código refatorado:
+Felizmente, com as alterações prévias, nós também conseguimos resolver a violação do Dependency Inversion. Refatorando o serviço da seguinte maneira:
 
 #### Servidor
 
@@ -572,46 +564,83 @@ class TcpServer:
 #### Despachante
 
 ``` python
+# Dicionário para armazenar as operações possíveis
+operations = {
+    'ADD': AddEsqueleto(),
+    'SUB': SubEsqueleto(),
+    'PADD': AddEsqueletoPrint(),
+    'PSUB': SubEsqueletoPrint(),
+    'SIN': SinEsqueleto()
+}
+
 class Despachante:
     def invoke(self, request):
         request = request.decode('utf-8')
         params = request.split(' ')
+        operation = params[0]
+        args = params[1:]
 
-        if params[0] == 'ADD':
-            return esqueleto.sum(params[1], params[2])
-        
-        elif params[0] == 'SUB':
-            return esqueleto.sub(params[1], params[2])
+        return operations[operation].handleOperation(args)
 ```
 
 #### Esqueleto
 
 ``` python
-class Esqueleto:
-    def sum(self, a, b):
-        a = float(a)
-        b = float(b)
-        result = calc.add(a, b)
-        response = str(result).encode('utf-8')
-        return response
+# Abstração para esqueletos
+class Esqueleto(ABC):
+    @abstractmethod
+    def callCalculator(self, a, b):
+        pass
+
+    def convert(self, a: str, b: str):
+        return float(a), float(b)
+
+    def encode(self, response):
+        return str(response).encode('utf-8')
     
-    def sub(self, a, b):
-        a = float(a)
-        b = float(b)
-        result = calc.subtract(a, b)
-        response = str(result).encode('utf-8')
+    def handleOperation(self, a, b):
+        a, b = self.convert(a, b)
+        result = self.callCalculator(a, b)
+        response = self.encode(result)
         return response
+
+# Implementações de esqueletos para cada operação:
+
+# Esqueleto para adição
+class AddEsqueleto(Esqueleto):
+    def callCalculator(self, a, b):
+        result = calc.calculate(AddOperation(), a, b)
+        return result
+
+# Esqueleto para subtração
+class SubEsqueleto(Esqueleto):
+    def callCalculator(self, a, b):
+        result = calc.calculate(SubOperation(), a, b)
+        return result
 ```
 
 #### Calculadora
 
 ``` python
-class Calculator:
-    def add(self, a, b):
+# Classe abstrata para operações
+class Operation(ABC):
+    @abstractmethod
+    def execute(self, a, b):
+        pass
+
+# Classes concretas para operações
+class AddOperation(Operation):
+    def execute(self, a, b):
         return a + b
 
-    def subtract(self, a, b):
+class SubOperation(Operation):
+    def execute(self, a, b):
         return a - b
+
+# Classe que utiliza as operações
+class Calculator:
+    def calculate(self, operation: Operation, a, b):
+        return operation.execute(a, b)
 ```
 
 Essa abordagem garante tanto que a classe servidor não esteja mais fundida com a ferramenta, como também cria uma interface que as conecta (Despachante), e por fim mantém a transparência, tanto a TcpServer quando Despachante não sabem como exatamente a Calculadora funciona, mas a Calculadora consegue executar a ação com os parâmetros fornecidos.
