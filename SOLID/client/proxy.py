@@ -4,8 +4,8 @@ class Proxy:
     def __init__(self):
         self.client = TcpClient()
 
-    def sendRequest(self, operation, a, b):
-        expression = f'{operation} {a} {b}'
+    def sendRequest(self, operation, args: list):
+        expression = f'{operation} {" ".join(map(str, args))}'
         req = expression.encode('utf-8')
         self.client.sendRequest(req)
 
