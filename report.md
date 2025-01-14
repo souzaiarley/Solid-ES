@@ -413,9 +413,10 @@ O ISP, por sua vez, prega que uma classe não deve ser forçada a implementar in
 Desejamos adicionar uma nova funcionalidade ao nosso serviço de calculadora: a impressão de operações e seus resultados, tentando simular uma calculadora de impressão.
 
 Para isso criaremos um método `printResult`, que imprime na tela a operação realizada e o resultado obtido.
-Para representar essa impressão, o método deve retornar uma `string`.
+Para representar essa impressão, o método deve retornar uma string.
 
 Aplicando essas alterações, obtemos o seguinte resultado:
+
 ```python
 class Calculator:
     def calculate(self, operation: Operation, a, b):
@@ -429,45 +430,51 @@ class Calculator:
 
 Desejamos também especificar tipos de calculadora (como calculadora simples, calculadora científica, calculadora financeira, etc.).
 
-Para isso, criaremos a classe `SimpleCalculator`.
+Para isso, criaremos a classe `scientificCalculator`.
 
 ```python
-class SimpleCalculator(Calculator):
+class scientificCalculator(Calculator):
     def printResult(self, result, operationType, a, b):
-        raise Exception("SimpleCalculator does not support printResult")
+        raise Exception("scientificCalculator does not support printResult")
+
+    def calculateTrigonometry(self, operation: TrigonometricOperation, a):
+        result = operation.execute(a)
+        return result
 ```
 
-A `SimpleCalculator` é um tipo de calculadora criada para representar uma calculadora básica que implementa somente as operações básicas. Logo, ela não oferece suporte à impressão.
-Para representar esse comportamento, o método `printResult` da classe `SimpleCalculator` foi sobrecarregado para lançar uma exceção, indicando que a operação não é suportada.
+A `scientificCalculator` é uma subclasse criada para representar uma calculadora científica que implementa somente operações básicas e mais complexas (trigonométricas, logaritmos, exponencial, média, etc). Logo, ela não oferece suporte à impressão.
+Para representar esse comportamento, o método `printResult` da classe `scientificCalculator` foi sobrecarregado para lançar uma exceção, indicando que a operação não é suportada.
 
-No entanto, essa abordagem viola o princípio de substituição de Liskov, pois a classe `SimpleCalculator` não é substituível pela classe `Calculator`: para as chamadas do método `printResult`, espera-se que o retorno seja a string da impressão, e não uma exceção.
-Ademais, o princípio de segregação de interfaces também é violado, pois a classe `SimpleCalculator` é forçada a implementar um método que não é utilizado.
+No entanto, essa abordagem viola o princípio de substituição de Liskov, pois a classe `scientificCalculator` não pode substituir sua classe mãe: para as chamadas do método `printResult`, espera-se que o retorno seja a string da impressão, e não uma exceção.
+Ademais, o princípio de segregação de interfaces também é violado, pois a classe `scientificCalculator` é forçada a implementar um método que não é utilizado.
 
-Para contornar essas violações, devemos refatorar o código de forma que a classe `SimpleCalculator` não seja forçada a implementar o método `printResult` e que a classe `Calculator` possa ser substituída por suas subclasses sem quebrar o comportamento do programa.
+Para contornar essas violações, devemos refatorar o código de forma que a classe `scientificCalculator` não seja forçada a implementar o método `printResult` e que a classe `Calculator` possa ser substituída por suas subclasses sem quebrar o comportamento do programa.
 
-Para isso, criaremos a classe `PrintingCalculator`, que é uma subclasse de `Calculator` que implementa o método `printResult`:
+Para isso, criaremos a classe `PrintingCalculator`, que é uma subclasse de `Calculator`. O método `printResult` deverá ser movido para ela e, portanto, será exclusivo dessa subclasse.
+
+Abaixo podemos ver o código da refatoração:
 
 #### Calculadora de Impressão
 
 ```python
-class PrintingCalculator(Calculator):
-    def printResult(self, result, operationType, a, b):
-        return f"{operationType}({a}, {b}) = {result}"
-```
-
-#### Calculadora Genérica
-
-```python
+# Classe genética
 class Calculator:
     def calculate(self, operation: Operation, a, b):
         result = operation.execute(a, b)
         return result
+
+# Classe que representa o comportamento de uma calculadora científica
+class scientificCalculator(Calculator):
+    # Método para cálculos de operações trigonométricas
+    def calculateTrigonometry(self, operation: TrigonometricOperation, a):
+        result = operation.execute(a)
+        return result
+
+# Classe que representa o comportamento de uma calculadora de impressão
+class PrintingCalculator(Calculator):
+    def printResult(self, result, operationType, a, b):
+        return f"{operationType}({a}, {b}) = {result}"
+
 ```
 
-#### Calculadora Simples
-Simplesmente herda da classe `Calculator`.
-
-```python
-class SimpleCalculator(Calculator):
-    pass
-```
+Com essas modificações, garantimos que a classe `scientificCalculator` não seja forçada a implementar métodos que não utiliza, respeitando o Princípio de Segregação de Interfaces (ISP). Além disso, a classe `Calculator` pode ser substuída por suas subclasses, respeitando o Princípio de Substituição de Liskov (LSP). Dessa forma, contribuímos mais ainda para a modularidade, flexibilidade e manutenibilidade do código.

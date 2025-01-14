@@ -21,8 +21,11 @@ class Calculator:
         result = operation.execute(a, b)
         return result
 
-class SimpleCalculator(Calculator):
-    pass
+class scientificCalculator(Calculator):
+    # Método para cálculos de operações trigonométricas
+    def calculateTrigonometry(self, operation: TrigonometricOperation, a):
+        result = operation.execute(a)
+        return result
 
 class PrintingCalculator(Calculator):
     def printResult(self, result, operationType, a, b):
